@@ -1,7 +1,7 @@
 {
   "name": "cra-template-ant-mobx",
   "version": "0.0.1",
-  "description": "antd + mobx template",
+  "description": "create-react-app template with antd + mobx",
   "keywords": [
     "antd",
     "mobx",
@@ -11,7 +11,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/facebook/create-react-app.git"
+    "url": "https://github.com/longlongago2/cra-template-ant-mobx.git"
   },
   "files": [
     "template",
