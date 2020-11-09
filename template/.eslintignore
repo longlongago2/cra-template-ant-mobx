@@ -1,0 +1,7 @@
+# webapck config
+config/*
+scripts/*
+
+# non core code
+src/serviceWorker.js
+src/setupTests.js
