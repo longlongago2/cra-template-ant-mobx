@@ -1,52 +1,70 @@
 /* eslint-disable no-console */
-import React, { Suspense, memo, useEffect, useCallback, Fragment } from 'react';
+import React, { Suspense, memo, useEffect, Fragment } from 'react';
 import PropTypes from 'prop-types';
 import { Router, Switch, Route, Redirect, useRouteMatch } from 'react-router-dom';
 import { createHashHistory } from 'history';
-import { NativePrivate } from '@/router/PrivateRoute';
-
-let removeRouteListener;
+import { NativePrivate } from './PrivateRoute';
 
 const history = createHashHistory();
 
 const areEqual = (prevProps, nextProps) => prevProps.routes === nextProps.routes;
 
-// Comp1
+// Nest Route
 const RecursionRoute = memo((props) => {
-  const { routes, beforeEach } = props;
+  const { routes, beforeEach, privateHandler } = props;
   const match = useRouteMatch();
   const parentpath = match.path !== '/' ? match.path : '';
   return (
     <Switch>
       {routes.map((item, i) => {
-        // config
-        const { path, exact, redirect, component: Comp, layout, children, meta } = item;
+        // Config
+        const { path, exact, redirect, layout, children, meta, component: RouteComp } = item;
         const nestpath = path !== '*' ? parentpath + path : path;
         const nestredirect = parentpath + redirect;
-        // component
-        const WrapperLayout = layout || Fragment;
-        const WrapperPrivate = item.private ? NativePrivate : Fragment;
-        // render
+
+        // Wrapper component
+        const isPrivate = item.private && !item.children; // 只有叶子节点才可以设置私有
+        let layoutComponent = layout;
+        let layoutFallback;
+        if (Object.prototype.toString.call(layout).indexOf('Object') > -1) {
+          layoutComponent = layout.component;
+          layoutFallback = layout.fallback;
+        }
+        const WrapperLayout = layoutComponent || Fragment;
+        const WrapperSuspense = layoutFallback ? Suspense : Fragment;
+        const WrapperPrivate = isPrivate ? NativePrivate : Fragment;
+
+        // Render
         const render = ({ location }) => {
           const next = (routeProps = {}) => {
             if (Object.prototype.toString.call(routeProps).indexOf('Object') < 0) {
-              console.error(`[RouterConfig]: Failed prop type: Invalid prop \`routeProps\` of type \`${typeof routeProps}\` supplied to function \`next\`, expected \`object\`.`);
+              console.error(
+                `[RouterConfig]: Failed prop type: Invalid prop \`routeProps\` of type \`${typeof routeProps}\` supplied to function \`next\`, expected \`object\`.`,
+              );
               return null;
             }
+
             if (redirect) {
               return <Redirect to={nestredirect} />;
             }
 
-            const wrapperPrivateProps = item.private ? { location } : {};
+            const wrapperSuspenseProps = layoutFallback ? { fallback: layoutFallback } : {};
+            const wrapperPrivateProps = isPrivate ? { location, match, privateHandler } : {};
             return (
               <WrapperLayout>
-                {children ? (
-                  <RecursionRoute routes={children} beforeEach={beforeEach} />
-                ) : (
-                  <WrapperPrivate {...wrapperPrivateProps}>
-                    <Comp {...routeProps} />
-                  </WrapperPrivate>
-                )}
+                <WrapperSuspense {...wrapperSuspenseProps}>
+                  {children ? (
+                    <RecursionRoute
+                      routes={children}
+                      beforeEach={beforeEach}
+                      privateHandler={privateHandler}
+                    />
+                  ) : (
+                    <WrapperPrivate {...wrapperPrivateProps}>
+                      <RouteComp {...routeProps} />
+                    </WrapperPrivate>
+                  )}
+                </WrapperSuspense>
               </WrapperLayout>
             );
           };
@@ -69,33 +87,44 @@ const RecursionRoute = memo((props) => {
 RecursionRoute.propTypes = {
   routes: PropTypes.array.isRequired,
   beforeEach: PropTypes.func,
+  privateHandler: PropTypes.object,
 };
 
-// Comp2
+// Route
 const RouterConfig = memo((props) => {
-  const { routes, beforeEach, onRouteChange } = props;
-
-  // memoized props: Avoid re-rendering
-  const _onRouteChange = useCallback(onRouteChange, []);
-  const _beforeEach = useCallback(beforeEach, []);
+  const { routes, beforeEach, privateHandler, onRouteChange } = props;
 
   // effect
   useEffect(() => {
-    removeRouteListener = history.listen((location, action) => {
-      if (typeof _onRouteChange === 'function') {
-        _onRouteChange(location, action);
+    const removeRouteListener = history.listen((location, action) => {
+      if (typeof onRouteChange === 'function') {
+        onRouteChange(location, action);
       }
     });
     return () => {
       removeRouteListener();
     };
-  }, [_onRouteChange]);
+  }, [onRouteChange]);
 
   // render
   return (
     <Router history={history}>
-      <Suspense fallback={<span>loading...</span>}>
-        <RecursionRoute routes={routes} beforeEach={_beforeEach} />
+      <Suspense
+        fallback={
+          <div
+            style={{
+              textAlign: 'center',
+              fontSize: 17,
+              marginTop: 50,
+              color: '#666',
+              fontFamily: 'Arial',
+            }}
+          >
+            loading...
+          </div>
+        }
+      >
+        <RecursionRoute routes={routes} beforeEach={beforeEach} privateHandler={privateHandler} />
       </Suspense>
     </Router>
   );
@@ -104,7 +133,10 @@ const RouterConfig = memo((props) => {
 RouterConfig.propTypes = {
   routes: PropTypes.array.isRequired,
   beforeEach: PropTypes.func,
+  privateHandler: PropTypes.object,
   onRouteChange: PropTypes.func,
 };
+
+export { AuthorityContext } from './PrivateRoute';
 
 export default RouterConfig;

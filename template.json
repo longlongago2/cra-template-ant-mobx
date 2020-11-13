@@ -107,7 +107,7 @@
         "max-len": "off",
         "no-unused-vars": "warn",
         "object-curly-newline": "off",
-        "react/prop-types": "warn",
+        "react/prop-types": "off",
         "no-underscore-dangle": "off",
         "import/no-extraneous-dependencies": "off",
         "linebreak-style": ["error", "windows"],

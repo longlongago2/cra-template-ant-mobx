@@ -4,7 +4,7 @@ import styles from './index.module.less';
 export default function AuthDemo() {
   return (
     <div className={styles.authDemo}>
-      更改 router/PrivateRoute.js 里的逻辑，换成接口请求亦然，
+      更改 RouterConfig privateHandler 里的逻辑，换成接口请求亦然，
       <br />
       页面默认都是有权限的，当接口请求到无权限时才会更新权限状态，在此之前依然可以看到路由界面，
       <br />

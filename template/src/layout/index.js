@@ -34,6 +34,9 @@ export default function Layout(props) {
         <Link to="/nest/about" className={styles.link}>
           关于
         </Link>
+        <Link to="/nest/nested-route" className={styles.link}>
+          嵌套路由
+        </Link>
         <Link to="/nest/xxx" className={styles.link}>
           noMatch
         </Link>
