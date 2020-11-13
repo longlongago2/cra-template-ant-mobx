@@ -1,12 +1,12 @@
 /* eslint-disable no-unused-vars */
-import React, { Suspense, useEffect } from 'react';
-import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
-import { Layout as AntLayout, Skeleton } from 'antd';
-import { Observer } from 'mobx-react';
-import { useStores } from '@/model'; // use hooks model
-import { namespace } from '@/model/auth'; // module namespace
-import styles from './index.module.less';
+import React, { useEffect } from "react";
+import PropTypes from "prop-types";
+import { Link } from "react-router-dom";
+import { Layout as AntLayout } from "antd";
+import { Observer } from "mobx-react";
+import { useStores } from "@/model"; // use hooks model
+import { namespace } from "@/model/auth"; // module namespace
+import styles from "./index.module.less";
 
 const { Header, Content, Footer } = AntLayout;
 // lazy 组件会有一段加载时间，通过Suspense可以自定义fallback骨架屏
@@ -44,15 +44,17 @@ export default function Layout(props) {
           noPermission
         </Link>
         <Observer>
-          {() => <span className={styles.profile}>{userinfo.data.username}</span>}
+          {() => (
+            <span className={styles.profile}>{userinfo.data.username}</span>
+          )}
         </Observer>
       </Header>
       <Content className={styles.content}>
-        <div className={styles.contentInner}>
-          <Suspense fallback={<Skeleton active />}>{children}</Suspense>
-        </div>
+        <div className={styles.inner}>{children}</div>
       </Content>
-      <Footer className={styles.footer}>Ant Design ©2018 Created by Ant UED</Footer>
+      <Footer className={styles.footer}>
+        Ant Design ©2018 Created by Ant UED
+      </Footer>
     </AntLayout>
   );
 }
