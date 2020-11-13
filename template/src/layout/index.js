@@ -1,12 +1,12 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect } from "react";
-import PropTypes from "prop-types";
-import { Link } from "react-router-dom";
-import { Layout as AntLayout } from "antd";
-import { Observer } from "mobx-react";
-import { useStores } from "@/model"; // use hooks model
-import { namespace } from "@/model/auth"; // module namespace
-import styles from "./index.module.less";
+import React, { useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { Link } from 'react-router-dom';
+import { Layout as AntLayout } from 'antd';
+import { Observer } from 'mobx-react';
+import { useStores } from '@/model'; // use hooks model
+import { namespace } from '@/model/auth'; // module namespace
+import styles from './index.module.less';
 
 const { Header, Content, Footer } = AntLayout;
 // lazy 组件会有一段加载时间，通过Suspense可以自定义fallback骨架屏
