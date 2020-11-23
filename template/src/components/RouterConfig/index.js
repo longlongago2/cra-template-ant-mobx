@@ -1,11 +1,9 @@
 /* eslint-disable no-console */
-import React, { Suspense, memo, useEffect, Fragment } from 'react';
+import React, { Suspense, memo, useEffect, Fragment, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Router, Switch, Route, Redirect, useRouteMatch } from 'react-router-dom';
-import { createHashHistory } from 'history';
+import { createHashHistory, createBrowserHistory } from 'history';
 import { NativePrivate } from './PrivateRoute';
-
-const history = createHashHistory();
 
 const areEqual = (prevProps, nextProps) => prevProps.routes === nextProps.routes;
 
@@ -92,11 +90,18 @@ RecursionRoute.propTypes = {
 
 // Route
 const RouterConfig = memo((props) => {
-  const { routes, beforeEach, privateHandler, onRouteChange } = props;
+  const { routes, beforeEach, type = 'hash', privateHandler, onRouteChange } = props;
+
+  const history = useRef();
+  if (type === 'hash') {
+    history.current = createHashHistory();
+  } else if (type === 'browser') {
+    history.current = createBrowserHistory();
+  }
 
   // effect
   useEffect(() => {
-    const removeRouteListener = history.listen((location, action) => {
+    const removeRouteListener = history.current.listen((location, action) => {
       if (typeof onRouteChange === 'function') {
         onRouteChange(location, action);
       }
@@ -108,7 +113,7 @@ const RouterConfig = memo((props) => {
 
   // render
   return (
-    <Router history={history}>
+    <Router history={history.current}>
       <Suspense
         fallback={
           <div
@@ -131,6 +136,7 @@ const RouterConfig = memo((props) => {
 }, areEqual);
 
 RouterConfig.propTypes = {
+  type: PropTypes.oneOf(['hash', 'browser']),
   routes: PropTypes.array.isRequired,
   beforeEach: PropTypes.func,
   privateHandler: PropTypes.object,
