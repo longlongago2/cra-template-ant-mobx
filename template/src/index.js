@@ -1,20 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import zhCN from 'antd/es/locale/zh_CN';
 import { ConfigProvider } from 'antd';
-import { configure } from 'mobx';
-import request from '@/utils/request';
-import * as serviceWorker from './serviceWorker';
-import App from './App';
+import zhCN from 'antd/lib/locale/zh_CN';
 import 'moment/locale/zh-cn';
 import 'antd/dist/antd.less';
 import './index.css';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
+import { responseInterception } from './utils/mobx-helper';
+import request from './utils/request';
 
-request.prototype.BASE_URL = process.env.REACT_APP_BASE_URL;
-
-configure({
-  enforceActions: 'observed', // 必须通过 action 更改 observable 状态，禁止直接更改
-});
+request.BASE_URL = process.env.REACT_APP_BASE_URL;
+request.after(responseInterception);
 
 ReactDOM.render(
   <React.StrictMode>
@@ -22,10 +19,10 @@ ReactDOM.render(
       <App />
     </ConfigProvider>
   </React.StrictMode>,
-  document.getElementById('root'),
+  document.getElementById('root')
 );
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.unregister();
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+reportWebVitals();

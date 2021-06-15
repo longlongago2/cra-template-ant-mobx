@@ -1,6 +1,6 @@
 {
   "name": "cra-template-antd-mobx",
-  "version": "0.0.8",
+  "version": "0.1.0",
   "description": "create-react-app template with antd + mobx",
   "keywords": [
     "antd",

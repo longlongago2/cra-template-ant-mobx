@@ -1,26 +1,22 @@
-/* eslint-disable no-console */
-import React, { useState, useEffect, useCallback } from 'react';
-import { Route, Redirect, useRouteMatch } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, memo } from 'react';
+import { Redirect } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import Loading from './Loading';
 
 const __DEV__ = process.env.NODE_ENV === 'development';
-
-// 默认验证权限
-const defaultAuthority = {
-  isAuthenticated: true, // 是否验证登录
-  isPermitted: true, // 是否有权限
-  // ...其他属性可自定义
-};
 
 // authority 信息上下文
 export const AuthorityContext = React.createContext();
 
-// Comp1: 私有Route组件-底层组件
-export const NativePrivate = (props) => {
-  const { location, match, children, privateHandler = {} } = props;
+// private Route 私有路由底层组件
+export const NativePrivate = memo((props) => {
+  const { location, match, children, privateHandler = {}, useAuthorityContext = false } = props;
 
-  const { effect, noAuthentication, noPermission } = privateHandler;
+  const { effect, noLoggedIn, noPermission } = privateHandler;
 
-  const [authority, setAuthority] = useState(defaultAuthority);
+  const [authority, setAuthority] = useState({});
+
+  const [loading, setLoading] = useState(true);
 
   const runGenerator = (generator) => {
     const iterator = generator();
@@ -55,6 +51,7 @@ export const NativePrivate = (props) => {
     promise.cancel = () => {
       runCancel().catch((err) => {
         if (__DEV__) {
+          // eslint-disable-next-line no-console
           console.warn(err.message);
         }
       });
@@ -69,6 +66,7 @@ export const NativePrivate = (props) => {
         location,
         put: setAuthority,
       });
+      setLoading(false);
     }
     const promise = runGenerator(gen);
     return promise;
@@ -82,16 +80,19 @@ export const NativePrivate = (props) => {
     };
   }, [execAuthority]);
 
+  // loading
+  if (loading) return <Loading />;
+
   // 未登录
-  if (!authority.isAuthenticated) {
-    if (typeof noAuthentication === 'function') {
-      return noAuthentication({ location, match, Redirect });
+  if (!authority.loggedIn) {
+    if (typeof noLoggedIn === 'function') {
+      return noLoggedIn({ location, match, Redirect });
     }
     return null;
   }
 
   // 无权限
-  if (!authority.isPermitted) {
+  if (!authority.permission) {
     if (typeof noPermission === 'function') {
       return noPermission({ location, match, Redirect });
     }
@@ -99,20 +100,17 @@ export const NativePrivate = (props) => {
   }
 
   // 通过验证
-  return <AuthorityContext.Provider value={authority}>{children}</AuthorityContext.Provider>;
-};
+  if (useAuthorityContext) {
+    return <AuthorityContext.Provider value={authority}>{children}</AuthorityContext.Provider>;
+  }
 
-// Comp2: 私有Route组件
-export default function PrivateRoute({ children, privateHandler, ...restProps }) {
-  const match = useRouteMatch();
-  return (
-    <Route
-      {...restProps}
-      render={({ location }) => (
-        <NativePrivate location={location} match={match} privateHandler={privateHandler}>
-          {children}
-        </NativePrivate>
-      )}
-    />
-  );
-}
+  return children;
+});
+
+NativePrivate.propTypes = {
+  location: PropTypes.object,
+  match: PropTypes.object,
+  children: PropTypes.element,
+  privateHandler: PropTypes.object,
+  useAuthorityContext: PropTypes.bool,
+};

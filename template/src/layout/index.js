@@ -1,64 +1,62 @@
-/* eslint-disable no-unused-vars */
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
 import { Layout as AntLayout } from 'antd';
-import { Observer } from 'mobx-react';
-import { useStores } from '@/model'; // use hooks model
-import { namespace } from '@/model/auth'; // module namespace
+import classNames from 'classnames/bind';
+import { Link } from 'react-router-dom';
+import { observer } from 'mobx-react';
+import { useStores } from '@/model';
+import { namespace } from '@/model/auth';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import styles from './index.module.less';
 
-const { Header, Content, Footer } = AntLayout;
-// lazy 组件会有一段加载时间，通过Suspense可以自定义fallback骨架屏
+const { Header, Content, Sider } = AntLayout;
 
-export default function Layout(props) {
-  // props
-  const { children } = props;
+const cx = classNames.bind(styles);
 
-  // model
+function Layout(props) {
+  const { children, nativeContent } = props;
   const { rootStore } = useStores();
-  const { userinfo, setUserinfo } = rootStore[namespace];
+  const { userInfo, setUserInfo, authMenu, setAuthMenu } = rootStore[namespace];
 
-  // effect
   useEffect(() => {
-    // TODO: mobx请求接口数据 --示例代码无法请求，先注释
-    // setUserinfo();
-  }, []);
+    // 获取用户信息
+    setUserInfo();
+    // 获取权限菜单
+    setAuthMenu();
+  }, [setUserInfo, setAuthMenu]);
 
   return (
-    <AntLayout className={styles.layout}>
-      <Header className={styles.header}>
-        <Link to="/nest/home" className={styles.link}>
-          首页
-        </Link>
-        <Link to="/nest/about" className={styles.link}>
-          关于
-        </Link>
-        <Link to="/nest/nested-route" className={styles.link}>
-          嵌套路由
-        </Link>
-        <Link to="/nest/xxx" className={styles.link}>
-          noMatch
-        </Link>
-        <Link to="/nest/auth-demo" className={styles.link}>
-          noPermission
-        </Link>
-        <Observer>
-          {() => (
-            <span className={styles.profile}>{userinfo.data.username}</span>
-          )}
-        </Observer>
-      </Header>
-      <Content className={styles.content}>
-        <div className={styles.inner}>{children}</div>
-      </Content>
-      <Footer className={styles.footer}>
-        Ant Design ©2018 Created by Ant UED
-      </Footer>
-    </AntLayout>
+    <ErrorBoundary>
+      <AntLayout className={styles.layout}>
+        <Sider className={styles.sider}>
+          <div className={styles.logo}>logo</div>
+          <ul className={styles.menu}>
+            {authMenu.data.map((item) => (
+              <li key={item.key}>
+                <Link to={item.path}>{item.name}</Link>
+              </li>
+            ))}
+          </ul>
+        </Sider>
+        <AntLayout>
+          <Header className={styles.header}>
+            <div className={styles.userInfo}>
+              <span>你好，</span>
+              <span>{userInfo.data.username}</span>
+            </div>
+          </Header>
+          <Content className={cx('content', { withInner: !nativeContent })}>
+            {nativeContent ? children : <div className={styles.contentInner}>{children}</div>}
+          </Content>
+        </AntLayout>
+      </AntLayout>
+    </ErrorBoundary>
   );
 }
 
 Layout.propTypes = {
-  children: PropTypes.object.isRequired,
+  children: PropTypes.element,
+  nativeContent: PropTypes.bool, // 原生Content
 };
+
+export default observer(Layout);

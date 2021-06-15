@@ -1,74 +1,43 @@
-import 'whatwg-fetch';
-import fetchJsonp from 'fetch-jsonp';
+// request config 请参考：https://github.com/axios/axios#request-config
+import axios from 'axios';
 
-function parseJSON(response) {
-  return response.json();
-}
-
-function checkStatus(response) {
-  if (response.status >= 200 && response.status < 300) {
-    return response;
+class Request {
+  constructor() {
+    this.$axios = axios.create({
+      baseURL: this.BASE_URL || '/',
+      timeout: this.timeout || 1500,
+    });
+    this.process = this.process.bind(this);
+    this.before = this.before.bind(this);
+    this.after = this.after.bind(this);
   }
 
-  const error = new Error(response.statusText);
-  error.response = response;
-  throw error;
-}
-
-function checkOK(response) {
-  if (response.ok) {
-    return response;
+  set BASE_URL(v) {
+    this.$axios.defaults.baseURL = v;
+    return v;
   }
 
-  const error = new Error('fetch jsonp request failed！');
-  error.response = response;
-  throw error;
-}
-
-const fetchOpts = {
-  credentials: 'include', // 允许跨域携带cookie
-};
-
-const fetchJsonOpts = {
-  timeout: 10000, // 超时时间
-};
-
-const combineURLs = (baseURL, relativeURL) => (relativeURL
-  ? `${baseURL.replace(/\/+$/, '')}/${relativeURL.replace(/^\/+/, '')}`
-  : baseURL);
-
-const isAbsoluteURL = (url) => /^([a-z][a-z\d+\-.]*:)?\/\//i.test(url);
-
-/**
- * Requests a URL, returning a promise.
- *
- * @param  {string}  url       请求地址
- * @param  {object}  [options] 配置参数：继承fetch原生参数
- * @param  {boolean} options.jsonp 是否使用jsonp请求
- * @return {object}  {data, err}
- */
-function request(url, options) {
-  let URL;
-  const BASE_URL = request.prototype.BASE_URL || '/';
-  if (isAbsoluteURL(url)) {
-    URL = url;
-  } else {
-    URL = combineURLs(BASE_URL, url);
+  set timeout(v) {
+    this.$axios.defaults.timeout = v;
+    return v;
   }
-  if (options && options.jsonp) {
-    const iOption = { ...options };
-    delete iOption.jsonp;
-    return fetchJsonp(URL, { ...fetchJsonOpts, ...iOption })
-      .then(checkOK)
-      .then(parseJSON)
-      .then((data) => ({ data }))
+
+  before(callback) {
+    this.$axios.interceptors.request.use(callback, (err) => Promise.reject(err));
+  }
+
+  after(callback) {
+    this.$axios.interceptors.response.use(callback, (err) => Promise.reject(err));
+  }
+
+  process(config) {
+    return this.$axios
+      .request(config)
+      .then(({ data }) => ({ data }))
       .catch((err) => ({ err }));
   }
-  return fetch(URL, { ...fetchOpts, ...options })
-    .then(checkStatus)
-    .then(parseJSON)
-    .then((data) => ({ data }))
-    .catch((err) => ({ err }));
 }
+
+const request = new Request();
 
 export default request;

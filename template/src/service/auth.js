@@ -1,5 +1,4 @@
-import { stringify } from 'qs';
-import request from '../utils/request';
+import request from '@/utils/request';
 
 /**
  * @description 获取用户信息
@@ -8,9 +7,9 @@ import request from '../utils/request';
  * @export
  * @return {*}
  */
-export async function apiGetUserInfo(params) {
-  const str = stringify(params);
-  return request(`user/userinfo${str}`, {
+export async function apiGetUserInfo() {
+  return request.process({
+    url: 'fileindex/getLoginUserInfo',
     method: 'GET',
   });
 }
@@ -23,8 +22,9 @@ export async function apiGetUserInfo(params) {
  * @return {*}
  */
 export async function apiGetAuthMenu(params) {
-  const str = stringify(params);
-  return request(`user/getuserroles${str}`, {
+  return request.process({
+    url: 'user/queryUserAllPermissions',
     method: 'GET',
+    params,
   });
 }

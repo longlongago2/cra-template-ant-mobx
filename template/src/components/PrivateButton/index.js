@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { AuthorityContext } from '@/components/RouterConfig';
 
 /**
- * @description 权限按钮组件
+ * @description 权限按钮组件：使用之前 RouterConfig useAuthorityContext 必须为 true
  * @export
  * @param {object} props
  * @param {string | number} props.buttonKey 按钮唯一标识

@@ -3,5 +3,5 @@ config/*
 scripts/*
 
 # non core code
-src/serviceWorker.js
+src/reportWebVitals.js
 src/setupTests.js

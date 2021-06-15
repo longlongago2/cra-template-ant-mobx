@@ -1,95 +1,51 @@
-/* eslint-disable no-console, class-methods-use-this, no-restricted-syntax */
+/* eslint-disable no-unused-expressions, no-console */
 import { makeObservable, action } from 'mobx';
-import { message } from 'antd';
 
 export class MobxHelper {
   constructor(store) {
     makeObservable(this, {
       commit: action.bound,
     });
-
     this.rootStore = store;
-
-    this.getModuleStore = this._getModuleStore.bind(this);
   }
 
-  _getModuleStore = (namespace) => {
+  select = (namespace) => {
     if (!namespace) return this.rootStore;
     if (typeof namespace !== 'string') {
-      console.warn('[mobx-helper]: the parameter `namespace` of function `getModuleStore` must be of type string.');
+      process.env.NODE_ENV &&
+        console.warn(
+          '[mobx-helper]: the parameter `namespace` of function `select` must be of type string.'
+        );
       return null;
     }
     return this.rootStore[namespace];
   };
 
-  commit({ response, success, error }) {
+  commit({ response, success, error, complete }) {
     const { data, err } = response;
-    if (err) {
-      if (typeof error === 'function') {
-        error.call(this, err);
-      }
-      message.error(err.message);
-      return;
+    if (data && typeof success === 'function') {
+      success.call(this, data, this.rootStore);
     }
-    if (data && Number(data.status) === 0) {
-      if (typeof success === 'function') {
-        success.call(this, data, this.rootStore);
-      }
-    } else {
-      const errMsg = data.msg;
-      const errCode = data.status;
-      if (typeof error === 'function') {
-        error.call(this, new Error(errMsg));
-        return;
-      }
-      message.error(`${errMsg}（状态码：${errCode}）`);
+    if (err && typeof error === 'function') {
+      error.call(this, err);
+    }
+    if (typeof complete === 'function') {
+      complete.call(this);
     }
   }
 }
 
 /**
- * inject map store to props: support namespace
- *
+ * @description 数据返回拦截逻辑
  * @export
- * @param {string} [namespace]
- * @param {string} mapFields
- * @return {object}
+ * @param {*} response axios 返回值
+ * @return {*}
  */
-export function injectMap(...args) {
-  let namespace;
-  let mapFields;
-  if (args && args.length >= 2) {
-    [namespace, mapFields] = args;
-  } else {
-    mapFields = args[0] || {};
+export function responseInterception(response) {
+  const { data } = response;
+  if (data && Number(data.status) === 0) {
+    return response;
   }
-  if (namespace && typeof namespace !== 'string') {
-    console.warn(
-      '[mobx-helper]: the parameter `namespace` of function `mapStoreToProps` must be of type string.',
-    );
-    return null;
-  }
-  if (mapFields && typeof mapFields !== 'object') {
-    console.warn(
-      '[mobx-helper]: the parameter `mapFields` of function `mapStoreToProps` must be of type object.',
-    );
-    return null;
-  }
-  return ({ store }) => {
-    const fields = {};
-    if (namespace) {
-      for (const key in mapFields) {
-        if (Object.prototype.hasOwnProperty.call(mapFields, key)) {
-          fields[key] = mapFields[key](store.rootStore[namespace]);
-        }
-      }
-    } else {
-      for (const key in mapFields) {
-        if (Object.prototype.hasOwnProperty.call(mapFields, key)) {
-          fields[key] = mapFields[key](store.rootStore);
-        }
-      }
-    }
-    return fields;
-  };
+  const { msg = '接口返回值未达到预期', status = -1 } = data;
+  return Promise.reject(new Error(`${msg}（状态码：${status}）`));
 }

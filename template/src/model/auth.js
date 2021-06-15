@@ -2,22 +2,31 @@ import { makeObservable, observable, action } from 'mobx';
 import { MobxHelper } from '@/utils/mobx-helper';
 import { apiGetAuthMenu, apiGetUserInfo } from '@/service';
 
-// TODO: MobxHelper: 主要是解析后台数据的逻辑，您必须根据您的数据格式返回进行改造
-// 默认返回结构：成功：{status:0, data:[]} 失败：{status:xxx, msg:'xxx'}
+// NOTE: mock 数据
+const defaultUserInfo = {
+  username: 'admin',
+  userId: 'xxxx-xxxx-xxxx-xxxx',
+};
+const defaultAuthMenu = [
+  { key: 'home', name: '首页', path: '/' },
+  { key: 'setting', name: '设置', path: '/nest/setting' },
+  { key: 'test', name: 'test404', path: '/nest/test' },
+];
+
 export class AuthStore extends MobxHelper {
   constructor(props) {
     super(props);
     makeObservable(this, {
       authMenu: observable,
       setAuthMenu: action.bound,
-      userinfo: observable,
-      setUserinfo: action.bound,
+      userInfo: observable,
+      setUserInfo: action.bound,
     });
   }
 
-  userinfo = { loading: false, data: { username: 'longlongago', userid: 'xxxx' } };
+  userInfo = { loading: false, data: defaultUserInfo };
 
-  authMenu = { loading: false, data: [] };
+  authMenu = { loading: false, data: defaultAuthMenu };
 
   async setAuthMenu(params, cbSuccess, cbFailed) {
     this.authMenu.loading = true;
@@ -30,24 +39,28 @@ export class AuthStore extends MobxHelper {
         if (typeof cbSuccess === 'function') cbSuccess(res);
       },
       error(err) {
-        if (typeof cbSuccess === 'function') cbFailed(err);
+        if (typeof cbFailed === 'function') cbFailed(err);
+      },
+      complete() {
+        this.authMenu.loading = false;
       },
     });
-    this.authMenu.loading = false;
   }
 
-  async setUserinfo(params, cbSuccess) {
-    this.userinfo.loading = true;
+  async setUserInfo(params, cbSuccess) {
+    this.userInfo.loading = true;
     const response = await apiGetUserInfo(params);
     this.commit({
       response,
       success(data) {
         const res = data.data || {};
-        this.userinfo.data = res;
+        this.userInfo.data = res;
         if (typeof cbSuccess === 'function') cbSuccess(res);
       },
+      complete() {
+        this.userInfo.loading = false;
+      },
     });
-    this.userinfo.loading = false;
   }
 }
 

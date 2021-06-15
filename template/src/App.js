@@ -1,11 +1,10 @@
-import React from 'react';
-import Router from '@/router';
-import './App.less';
+import View from '@/view';
+import './App.css';
 
 function App() {
   return (
     <div className="App">
-      <Router></Router>
+      <View />
     </div>
   );
 }
